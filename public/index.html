@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DocDigest · AI 文档分析</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="sidebar__header">
+          <div class="brand">
+            <div class="brand__name">DocDigest</div>
+            <div class="brand__desc">AI 文档分析工具</div>
+          </div>
+          <div class="sidebar__actions">
+            <button id="newBtn" class="btn btn--secondary" type="button">新建分析</button>
+            <button id="clearBtn" class="btn btn--danger" type="button">清空历史</button>
+          </div>
+        </div>
+
+        <div class="sidebar__section">
+          <div class="sidebar__sectionTitle">历史记录</div>
+          <div id="historyList" class="history"></div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="main__header">
+          <div>
+            <div class="title">AI 文档分析</div>
+            <div class="subtitle">上传 txt / md / pdf，选择模式，一键生成结果（支持 Markdown 渲染与历史记录）。</div>
+            <div class="hint">
+              使用方式：先上传文件 → 选择分析模式 → 点击“生成结果”。生成的结果会自动保存到左侧历史记录。
+            </div>
+          </div>
+          <div class="metaLine">
+            <span class="metaLabel">当前文件：</span>
+            <span id="filename" class="metaValue">-</span>
+          </div>
+        </header>
+
+        <section class="panel">
+          <div class="panel__title">输入</div>
+          <form id="uploadForm" class="uploadRow">
+            <input id="fileInput" name="file" type="file" accept=".txt,.md,.pdf,text/plain,text/markdown,application/pdf" />
+            <button class="btn" type="submit">上传并读取</button>
+          </form>
+
+          <div class="controls">
+            <label class="field">
+              <div class="field__label">分析模式</div>
+              <select id="summaryType" class="field__control">
+                <option value="summary" selected>摘要</option>
+                <option value="bullets">提取要点</option>
+                <option value="outline">生成大纲</option>
+                <option value="resume">简历优化建议</option>
+              </select>
+            </label>
+
+            <div class="actions">
+              <button id="summarizeBtn" class="btn" type="button" disabled>生成结果</button>
+              <div id="error" class="error" hidden></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="grid">
+          <section class="panel">
+            <div class="panel__title">原文预览</div>
+            <pre id="output" class="code" aria-label="file-content">（这里显示文件内容）</pre>
+          </section>
+
+          <section class="panel">
+            <div class="panel__title">AI 结果</div>
+            <div id="summary" class="result markdown" aria-label="summary">（这里显示结果）</div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="./main.js"></script>
+  </body>
+</html>

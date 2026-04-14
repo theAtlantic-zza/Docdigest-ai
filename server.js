@@ -21,12 +21,16 @@ function isAllowed(filename) {
 
 app.post("/upload", upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "未收到文件" });
-  if (!isAllowed(req.file.originalname)) {
+  const decodedFilename = Buffer.from(req.file.originalname, "latin1").toString(
+    "utf8"
+  );
+
+  if (!isAllowed(decodedFilename)) {
     return res.status(400).json({ error: "只支持 .txt、.md 和 .pdf" });
   }
 
   try {
-    const ext = path.extname(req.file.originalname).toLowerCase();
+    const ext = path.extname(decodedFilename).toLowerCase();
     let text = "";
 
     if (ext === ".pdf") {
@@ -46,7 +50,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     }
 
     res.json({
-      filename: req.file.originalname,
+      filename: decodedFilename,
       text
     });
   } catch (err) {
@@ -71,12 +75,26 @@ app.post("/summarize", async (req, res) => {
     return res.status(400).json({ error: "text 不能为空" });
   }
   const type = (req.body && req.body.type) || "summary";
+  const jobTitle = (req.body && req.body.jobTitle) || "";
 
   let instruction = "请用一段话总结以下内容：";
   if (type === "summary") instruction = "请用一段话总结以下内容：";
   if (type === "bullets") instruction = "请用 bullet points 列出以下内容的重点：";
   if (type === "outline") instruction = "请为以下内容生成结构化大纲：";
   if (type === "resume") instruction = "请基于以下内容，给出简历优化建议（用 bullet points，聚焦表达、结构与可量化成果）：";
+  if (type === "job_match") {
+    if (typeof jobTitle !== "string" || !jobTitle.trim()) {
+      return res.status(400).json({ error: "jobTitle 不能为空" });
+    }
+    instruction =
+      "请基于以下简历/文档内容，并结合目标岗位，输出一份“岗位匹配分析”。\n" +
+      "要求使用 Markdown，至少包含以下小节：\n" +
+      "1) 岗位匹配度判断（0-100 分 + 1-2 句理由）\n" +
+      "2) 简历中的优势点（bullet points）\n" +
+      "3) 与岗位的差距（bullet points）\n" +
+      "4) 修改建议（按优先级排序）\n" +
+      "5) 下一步行动建议（1-3 条可执行动作）";
+  }
 
   try {
     const resp = await axios.post(
@@ -85,7 +103,13 @@ app.post("/summarize", async (req, res) => {
         model: "qwen-turbo",
         messages: [
           { role: "system", content: "你是一个擅长提炼要点的中文助手。" },
-          { role: "user", content: `${instruction}\n\n${text}` }
+          {
+            role: "user",
+            content:
+              type === "job_match"
+                ? `${instruction}\n\n【目标岗位】\n${jobTitle}\n\n【文档内容】\n${text}`
+                : `${instruction}\n\n${text}`
+          }
         ]
       },
       {
@@ -114,6 +138,83 @@ app.post("/summarize", async (req, res) => {
       (err && err.message) ||
       "调用通义千问失败";
     res.status(500).json({ error: "总结失败", status, message, detail });
+  }
+});
+
+app.post("/chat", async (req, res) => {
+  const apiKey = process.env.DASHSCOPE_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({
+      error: "缺少 DASHSCOPE_API_KEY",
+      hint: "请在 .env 中配置 DASHSCOPE_API_KEY，或通过环境变量注入"
+    });
+  }
+
+  const currentDocumentText = (req.body && req.body.currentDocumentText) || "";
+  const currentAnalysisResult = (req.body && req.body.currentAnalysisResult) || "";
+  const userQuestion = (req.body && req.body.userQuestion) || "";
+
+  if (typeof currentDocumentText !== "string" || !currentDocumentText.trim()) {
+    return res.status(400).json({ error: "currentDocumentText 不能为空" });
+  }
+  if (typeof userQuestion !== "string" || !userQuestion.trim()) {
+    return res.status(400).json({ error: "userQuestion 不能为空" });
+  }
+  if (typeof currentAnalysisResult !== "string") {
+    return res.status(400).json({ error: "currentAnalysisResult 必须是字符串" });
+  }
+
+  const context = [
+    "你是一个中文 AI 文档分析助手。你需要基于用户上传的文档内容回答追问。",
+    "回答要求：清晰、可执行、尽量结构化；如信息不足请说明需要补充什么。",
+    "",
+    "【当前文档内容】",
+    currentDocumentText,
+    "",
+    currentAnalysisResult.trim() ? "【当前分析结果】\n" + currentAnalysisResult : "",
+    "",
+    "【用户问题】",
+    userQuestion
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  try {
+    const resp = await axios.post(
+      "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      {
+        model: "qwen-turbo",
+        messages: [
+          { role: "system", content: "你是一个擅长提炼要点的中文助手。" },
+          { role: "user", content: context }
+        ]
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        timeout: 60000
+      }
+    );
+
+    const reply =
+      resp.data &&
+      resp.data.choices &&
+      resp.data.choices[0] &&
+      resp.data.choices[0].message &&
+      resp.data.choices[0].message.content;
+
+    if (!reply) return res.status(500).json({ error: "未获取到回复" });
+    res.json({ reply });
+  } catch (err) {
+    const status = err && err.response && err.response.status;
+    const detail = err && err.response && err.response.data;
+    const message =
+      (detail && (detail.message || detail.error || detail.msg)) ||
+      (err && err.message) ||
+      "调用通义千问失败";
+    res.status(500).json({ error: "提问失败", status, message, detail });
   }
 });
 

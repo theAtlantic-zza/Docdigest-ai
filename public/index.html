@@ -56,7 +56,18 @@
                 <option value="bullets">提取要点</option>
                 <option value="outline">生成大纲</option>
                 <option value="resume">简历优化建议</option>
+                <option value="job_match">岗位匹配分析</option>
               </select>
+            </label>
+
+            <label id="jobTargetField" class="field hidden">
+              <div class="field__label">目标岗位</div>
+              <input
+                id="jobTargetInput"
+                class="field__control"
+                type="text"
+                placeholder="例如：AI产品经理实习生 / 数据分析实习生 / 运营岗"
+              />
             </label>
 
             <div class="actions">
@@ -66,17 +77,40 @@
           </div>
         </section>
 
-        <section class="grid">
-          <section class="panel">
-            <div class="panel__title">原文预览</div>
-            <pre id="output" class="code" aria-label="file-content">（这里显示文件内容）</pre>
-          </section>
-
-          <section class="panel">
-            <div class="panel__title">AI 结果</div>
+        <section class="panel">
+            <div class="panelHeader">
+              <div class="panel__title panelHeader__title">AI 结果</div>
+              <div class="resultActions">
+                <button id="viewDocBtn" class="btn btn--secondary btn--sm" type="button" disabled>查看原文</button>
+                <button id="copyResultBtn" class="btn btn--secondary btn--sm" type="button" disabled>复制结果</button>
+                <button id="exportMdBtn" class="btn btn--secondary btn--sm" type="button" disabled>导出 Markdown</button>
+                <button id="exportTxtBtn" class="btn btn--secondary btn--sm" type="button" disabled>导出 TXT</button>
+              </div>
+            </div>
+            <div id="resultToast" class="toast" hidden></div>
             <div id="summary" class="result markdown" aria-label="summary">（这里显示结果）</div>
-          </section>
+
+            <div class="chat">
+              <div class="chat__title">继续提问</div>
+              <div id="chatHistory" class="chatHistory"></div>
+              <div class="chatComposer">
+                <input id="chatInput" class="chatInput" type="text" placeholder="基于当前文档继续提问…" />
+                <button id="chatSendBtn" class="btn btn--secondary" type="button" disabled>发送</button>
+              </div>
+              <div id="chatHint" class="chatHint">提示：上传文档并生成一次结果后，就可以继续追问。</div>
+            </div>
         </section>
+
+        <div id="docModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="原文预览">
+          <div class="modal__backdrop" data-close="1"></div>
+          <div class="modal__panel">
+            <div class="modal__header">
+              <div class="modal__title">原文预览</div>
+              <button id="docModalCloseBtn" class="btn btn--secondary btn--sm" type="button">关闭</button>
+            </div>
+            <pre id="output" class="code modal__content" aria-label="file-content">（这里显示文件内容）</pre>
+          </div>
+        </div>
       </main>
     </div>
 

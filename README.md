@@ -1,63 +1,70 @@
+<div align="center">
+
 # DocDigest — AI Document Analyzer & Job Fit Assistant
 
-**One-liner:** Turn resumes and documents (`txt / md / pdf`) into actionable insights — summaries, bullet points, outlines, resume improvement tips, and **job fit analysis** — with chat follow-ups and export-ready results.
+**From raw documents to hiring-ready insights.**
 
-## Why this project
+Upload `txt / md / pdf` → generate structured analysis → chat follow-ups → export results.
 
-Most “document summarizers” stop at a single output. DocDigest is built to feel like a small, real product:
+![Node.js](https://img.shields.io/badge/Node.js-≥18-3c873a?logo=node.js&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-blue)
+![Status](https://img.shields.io/badge/Status-In%20Progress-6ea8fe)
 
-- **Document → Insight**: not only summarize, but structure, extract, and advise.
-- **Job fit** (岗位匹配分析): analyze a resume against a target role and suggest concrete next steps.
-- **Local-first**: runs on your machine, keeps history in the browser (no database).
-
-## Core Features
-
-- **File upload & text extraction**: `txt / md / pdf`
-- **Analysis modes**
-  - **Summary** (concise)
-  - **Key points** (bullet points)
-  - **Outline** (structured)
-  - **Resume improvement suggestions**
-  - **Job fit analysis** (岗位匹配分析) with a target role input
-- **Chat follow-ups**: keep asking questions based on the current document (session-only)
-- **Result usability**
-  - Markdown rendering
-  - Copy to clipboard
-  - Export raw Markdown / plain text
-- **History**: automatically saved in `localStorage` (open, switch, clear)
-
-## Screenshots
-
-> Place these files under `docdigest/screenshots/` to enable the preview on GitHub.
+</div>
 
 ![Home](screenshots/home.png)
-![Resume analysis](screenshots/resume-analysis.png)
-![Job fit analysis](screenshots/job-fit-analysis.png)
+![Resume Analysis](screenshots/resume-analysis.png)
+![Job Fit](screenshots/job-fit-analysis.png)
 
-## Tech Stack
+## ✨ What is this
 
-- **Node.js + Express** for the server
-- **Vanilla HTML/CSS/JS** for the UI (no framework)
-- **DashScope / Qwen** (compatible-mode Chat Completions) for AI analysis
-- **pdf-parse** for PDF text extraction
+DocDigest is a **local-first AI document analyzer** designed for resume workflows and high-signal reading.
+Instead of producing one generic summary, it helps you **understand**, **improve**, and **match** a resume to a target role — and lets you keep asking follow-up questions on top of the current document context.
 
-## Project Structure
+Built to feel like a small product you can actually demo, not a one-off script.（英文为主，少量中文注释）
 
-```text
-docdigest/
-  server.js                # Express server: upload, summarize, chat
-  public/
-    index.html             # UI layout
-    style.css              # UI styling
-    main.js                # Client logic: analysis, history, chat, export
-  .env.example             # Environment variables template
-  .gitignore
-  LICENSE
-  README.md
-  screenshots/             # (optional) add screenshots for GitHub preview
-```
+## 🚀 Key Capabilities
 
-## Getting Started
+### 📄 Document Understanding
+
+- Upload & extract text from `txt / md / pdf`
+- Generate **Summary**, **Key Points**, and **Outline**
+- Render AI output as Markdown for readability
+
+### 💼 Resume & Job Fit
+
+- Resume improvement suggestions (actionable edits, structure, clarity)
+- **Job fit analysis (岗位匹配分析)** with a **Target role** input
+  - match score & rationale
+  - strengths, gaps, and recommended next steps
+
+### 💬 Interactive Analysis
+
+- Chat-style follow-ups based on the **current document + current analysis**
+- Session-only chat history (no server persistence)
+
+### 📤 Shareable Output
+
+- Copy result to clipboard
+- Export **raw Markdown** / **plain text**
+- Local analysis history stored in `localStorage` (open/switch/clear)
+
+## 🧠 How it works
+
+1. **Upload** a document (`txt / md / pdf`)
+2. **Parse** text locally on the server (PDF via `pdf-parse`)
+3. **Send** the document context to DashScope / Qwen for analysis
+4. **Render** Markdown output and enable export / follow-up chat
+
+## 📸 Demo
+
+The README screenshots above are expected at:
+
+- `screenshots/home.png`
+- `screenshots/resume-analysis.png`
+- `screenshots/job-fit-analysis.png`
+
+## ⚡ Getting Started
 
 ```bash
 cd docdigest
@@ -68,9 +75,32 @@ npm start
 
 Open `http://localhost:3000`.
 
+## 🛠 Tech Stack
+
+- Node.js
+- Express
+- Vanilla HTML/CSS/JS
+- DashScope / 通义千问 API (Qwen compatible-mode Chat)
+- pdf-parse
+
+## 📦 Project Structure
+
+```text
+docdigest/
+  server.js                # upload, summarize, chat
+  public/
+    index.html             # UI
+    style.css              # styling
+    main.js                # client logic (history/chat/export)
+  .env.example
+  LICENSE
+  README.md
+  screenshots/
+```
+
 ## Environment Variables
 
-Create a `.env` file (or export env vars in your shell):
+Create `.env`:
 
 ```env
 DASHSCOPE_API_KEY=your_api_key_here
@@ -78,32 +108,23 @@ PORT=3000
 ```
 
 - `DASHSCOPE_API_KEY` (required): DashScope API key
-- `PORT` (optional): server port (default `3000`)
+- `PORT` (optional): default `3000`
 
-## Usage Flow
+## 🎯 Use Cases
 
-1. Upload a document (`txt / md / pdf`).
-2. Choose an analysis mode.
-3. (Optional) If you select **Job fit analysis**, fill in the **Target role**.
-4. Click **Generate** to get the result.
-5. Use **Copy / Export** to reuse the output.
-6. Ask follow-up questions in **Chat** based on the current document.
+- Resume optimization: rewrite bullets, improve clarity, surface strengths
+- Job matching: evaluate fit against a target role and plan next actions
+- Document summarization: turn long notes into an outline + key points
 
-## Example Use Cases
-
-- **Resume review**: identify strengths, rewrite wording, and improve structure.
-- **Job fit analysis**: evaluate match, gaps, and next actions for a target role.
-- **Document digest**: turn long notes into an outline + bullet points.
-
-## Roadmap
+## 🗺 Roadmap
 
 - Deployment: Docker / one-click run
-- Better “chat with document”: multi-turn memory per document
-- More file types (e.g., docx) and better text extraction
-- Multi-model support (configurable model/provider)
+- Chat with document: better multi-turn memory per document
+- More file types (e.g., docx) and improved extraction quality
+- Multi-model support (configurable provider/model)
 - Streaming responses for long outputs
 
-## License
+## 📄 License
 
 MIT — see [`LICENSE`](LICENSE).
 

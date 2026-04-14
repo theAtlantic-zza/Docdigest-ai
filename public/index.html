@@ -78,14 +78,35 @@
         </section>
 
         <section class="panel">
+          <div class="panelHeader">
+            <div class="panel__title panelHeader__title">Parsed Text (Free)</div>
+            <div class="resultActions">
+              <button id="copyParsedBtn" class="btn btn--secondary btn--sm" type="button" disabled>复制原文</button>
+              <button id="viewDocBtn" class="btn btn--secondary btn--sm" type="button" disabled>查看原文</button>
+            </div>
+          </div>
+          <div id="parsedHint" class="hint">
+            Document parsing is available for free. Upload a file to extract text. Add your own DashScope API key to unlock AI analysis.
+          </div>
+          <pre id="parsedText" class="code" aria-label="parsed-text">（上传文件后这里显示解析文本）</pre>
+        </section>
+
+        <section class="panel">
             <div class="panelHeader">
               <div class="panel__title panelHeader__title">AI 结果</div>
               <div class="resultActions">
-                <button id="viewDocBtn" class="btn btn--secondary btn--sm" type="button" disabled>查看原文</button>
+                <button id="saveKeyBtn" class="btn btn--secondary btn--sm" type="button">保存 API Key</button>
+                <button id="clearKeyBtn" class="btn btn--secondary btn--sm" type="button">清除 Key</button>
                 <button id="copyResultBtn" class="btn btn--secondary btn--sm" type="button" disabled>复制结果</button>
                 <button id="exportMdBtn" class="btn btn--secondary btn--sm" type="button" disabled>导出 Markdown</button>
                 <button id="exportTxtBtn" class="btn btn--secondary btn--sm" type="button" disabled>导出 TXT</button>
               </div>
+            </div>
+            <div class="keyRow">
+              <input id="apiKeyInput" class="field__control" type="password" placeholder="Bring your own DashScope API key to unlock AI analysis" />
+            </div>
+            <div id="aiGate" class="hint">
+              AI analysis is locked. Add your own DashScope API key to use summary / job fit / chat features.
             </div>
             <div id="resultToast" class="toast" hidden></div>
             <div id="summary" class="result markdown" aria-label="summary">（这里显示结果）</div>

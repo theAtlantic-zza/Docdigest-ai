@@ -75,6 +75,14 @@ npm start
 
 Open `http://localhost:3000`.
 
+## Usage Modes
+
+- **Free Mode**: upload `txt / md / pdf` and extract/preview/copy the parsed text (no API key required).
+- **BYOK Mode** (Bring Your Own Key): add your own DashScope API key to unlock all AI features:
+  - analysis modes (summary / outline / resume tips / job fit)
+  - chat follow-ups
+  - export/copy AI results
+
 ## 🛠 Tech Stack
 
 - Node.js

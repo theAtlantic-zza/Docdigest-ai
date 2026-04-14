@@ -1,5 +1,7 @@
 const form = document.getElementById("uploadForm");
 const fileInput = document.getElementById("fileInput");
+const parsedTextEl = document.getElementById("parsedText");
+const parsedHintEl = document.getElementById("parsedHint");
 const output = document.getElementById("output");
 const filenameEl = document.getElementById("filename");
 const errorEl = document.getElementById("error");
@@ -15,6 +17,11 @@ const chatSendBtn = document.getElementById("chatSendBtn");
 const chatHintEl = document.getElementById("chatHint");
 const jobTargetFieldEl = document.getElementById("jobTargetField");
 const jobTargetInputEl = document.getElementById("jobTargetInput");
+const apiKeyInputEl = document.getElementById("apiKeyInput");
+const saveKeyBtn = document.getElementById("saveKeyBtn");
+const clearKeyBtn = document.getElementById("clearKeyBtn");
+const aiGateEl = document.getElementById("aiGate");
+const copyParsedBtn = document.getElementById("copyParsedBtn");
 const copyResultBtn = document.getElementById("copyResultBtn");
 const exportMdBtn = document.getElementById("exportMdBtn");
 const exportTxtBtn = document.getElementById("exportTxtBtn");
@@ -24,6 +31,7 @@ const docModalEl = document.getElementById("docModal");
 const docModalCloseBtn = document.getElementById("docModalCloseBtn");
 
 const LS_KEY = "docdigest.history.v1";
+const API_KEY_LS = "dashscope_api_key";
 
 let currentText = "";
 let currentFileName = "-";
@@ -32,6 +40,7 @@ let currentAnalysisResultText = "";
 let chatMessages = []; // session-only
 let analyzeInProgress = false;
 let currentJobTarget = "";
+let userApiKey = "";
 
 function nowIso() {
   return new Date().toISOString();
@@ -60,6 +69,34 @@ function showError(msg) {
   errorEl.hidden = !msg;
 }
 
+function loadUserKey() {
+  try {
+    return safeText(localStorage.getItem(API_KEY_LS));
+  } catch {
+    return "";
+  }
+}
+
+function saveUserKey(key) {
+  try {
+    localStorage.setItem(API_KEY_LS, key);
+  } catch {}
+}
+
+function clearUserKey() {
+  try {
+    localStorage.removeItem(API_KEY_LS);
+  } catch {}
+}
+
+function setAiLockedUI(locked) {
+  if (aiGateEl) aiGateEl.classList.toggle("hidden", !locked);
+  // AI actions
+  if (summarizeBtn) summarizeBtn.disabled = locked || !Boolean(currentText && currentText.trim());
+  setChatEnabled(!locked && Boolean(currentText && currentText.trim() && currentAnalysisResultText.trim()));
+  setResultActionsEnabled(Boolean(currentAnalysisResultText && currentAnalysisResultText.trim()));
+}
+
 let toastTimer = null;
 function showToast(message, kind = "ok") {
   if (!resultToastEl) return;
@@ -83,16 +120,17 @@ function setResultActionsEnabled(enabled) {
   if (exportMdBtn) exportMdBtn.disabled = !can;
   if (exportTxtBtn) exportTxtBtn.disabled = !can;
   if (viewDocBtn) viewDocBtn.disabled = !Boolean(currentText && currentText.trim());
+  if (copyParsedBtn) copyParsedBtn.disabled = !Boolean(currentText && currentText.trim());
 }
 
 function setChatEnabled(enabled) {
   if (!chatSendBtn) return;
-  const can = Boolean(enabled);
+  const can = Boolean(enabled) && Boolean(userApiKey && userApiKey.trim());
   chatSendBtn.disabled = !can;
   if (chatHintEl) {
     chatHintEl.textContent = can
       ? "提示：你可以继续追问，例如“提炼三个亮点 / 适合什么岗位 / 改写更专业”。"
-      : "提示：上传文档并生成一次结果后，就可以继续追问。";
+      : "提示：解析文档免费可用；添加你的 DashScope API key 后可继续追问。";
   }
 }
 
@@ -116,6 +154,13 @@ function setSummaryMarkdown(md) {
   if (!summaryEl) return;
   const text = safeText(md);
   summaryEl.innerHTML = typeof marked !== "undefined" ? marked.parse(text) : text;
+}
+
+function setParsedText(text) {
+  const t = safeText(text);
+  if (parsedTextEl) parsedTextEl.textContent = t || "（上传文件后这里显示解析文本）";
+  if (output) output.textContent = t || "（这里显示文件内容）";
+  setResultActionsEnabled(Boolean(t && t.trim()));
 }
 
 function updateJobTargetVisibility() {
@@ -205,7 +250,8 @@ async function chatAsk(currentDocumentText, currentAnalysisResult, userQuestion)
     body: JSON.stringify({
       currentDocumentText,
       currentAnalysisResult,
-      userQuestion
+      userQuestion,
+      userApiKey
     })
   });
   const data = await res.json().catch(() => ({}));
@@ -297,12 +343,12 @@ function openHistory(id) {
   chatMessages = [];
 
   if (filenameEl) filenameEl.textContent = currentFileName;
-  if (output) output.textContent = currentText || "（这里显示文件内容）";
+  setParsedText(currentText);
   if (summaryTypeEl && it.mode) summaryTypeEl.value = it.mode;
   setJobTargetValue(currentJobTarget);
   updateJobTargetVisibility();
   setSummaryMarkdown(currentAnalysisResultText || "（这里显示结果）");
-  setAnalyzeEnabled(Boolean(currentText && currentText.trim()));
+  setAnalyzeEnabled(Boolean(currentText && currentText.trim()) && Boolean(userApiKey && userApiKey.trim()));
   showError("");
   renderHistory();
   renderChat();
@@ -318,7 +364,7 @@ function resetWorkspace() {
   currentJobTarget = "";
   chatMessages = [];
   if (filenameEl) filenameEl.textContent = "-";
-  if (output) output.textContent = "（这里显示文件内容）";
+  setParsedText("");
   setSummaryMarkdown("（这里显示结果）");
   setAnalyzeEnabled(false);
   showError("");
@@ -329,6 +375,7 @@ function resetWorkspace() {
   renderHistory();
   renderChat();
   setChatEnabled(false);
+  setAiLockedUI(!Boolean(userApiKey && userApiKey.trim()));
 }
 
 function openDocModal() {
@@ -345,6 +392,7 @@ async function uploadAndRead(file) {
   const fd = new FormData();
   fd.append("file", file);
 
+  if (parsedTextEl) parsedTextEl.textContent = "读取中...";
   if (output) output.textContent = "读取中...";
   showError("");
   setAnalyzeEnabled(false);
@@ -361,7 +409,7 @@ async function summarize(text, type) {
   const res = await fetch("/summarize", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, type, jobTitle })
+    body: JSON.stringify({ text, type, jobTitle, userApiKey })
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -390,18 +438,18 @@ if (form) {
       setJobTargetValue("");
       chatMessages = [];
       if (filenameEl) filenameEl.textContent = currentFileName;
-      if (output) output.textContent = currentText || "（这里显示文件内容）";
-      setAnalyzeEnabled(Boolean(currentText && currentText.trim()));
+      setParsedText(currentText);
+      setAnalyzeEnabled(Boolean(currentText && currentText.trim()) && Boolean(userApiKey && userApiKey.trim()));
       if (!currentText || !currentText.trim()) {
         showError("文件读取成功，但未提取到可分析的文本内容");
       }
       renderChat();
       setChatEnabled(false);
-      setResultActionsEnabled(false);
-      setResultActionsEnabled(Boolean(currentAnalysisResultText && currentAnalysisResultText.trim()));
+      setResultActionsEnabled(Boolean(currentText && currentText.trim()));
+      setAiLockedUI(!Boolean(userApiKey && userApiKey.trim()));
     } catch (err) {
       showError(err && err.message ? err.message : "上传失败");
-      if (output) output.textContent = "（这里显示文件内容）";
+      setParsedText("");
       setAnalyzeEnabled(false);
       setChatEnabled(false);
       setResultActionsEnabled(false);
@@ -412,6 +460,11 @@ if (form) {
 if (summarizeBtn) {
   summarizeBtn.addEventListener("click", async () => {
     showError("");
+    if (!userApiKey || !userApiKey.trim()) {
+      showError("Document parsing is available for free. Add your own DashScope API key to unlock AI analysis.");
+      setAiLockedUI(true);
+      return;
+    }
     if (!currentText || !currentText.trim()) {
       showError("请先上传文件获取文本内容");
       setAnalyzeEnabled(false);
@@ -462,7 +515,7 @@ if (summarizeBtn) {
       setResultActionsEnabled(false);
     } finally {
       setAnalyzeLoading(false);
-      setAnalyzeEnabled(Boolean(currentText && currentText.trim()));
+      setAnalyzeEnabled(Boolean(currentText && currentText.trim()) && Boolean(userApiKey && userApiKey.trim()));
     }
   });
 }
@@ -484,6 +537,11 @@ function setChatLoading(loading) {
 async function onSendChat() {
   showError("");
   const question = safeText(chatInputEl && chatInputEl.value).trim();
+  if (!userApiKey || !userApiKey.trim()) {
+    showError("Add your DashScope API key to unlock chat follow-ups.");
+    setChatEnabled(false);
+    return;
+  }
   if (!currentText || !currentText.trim() || !currentAnalysisResultText.trim()) {
     showError("请先上传文档并生成一次结果后再继续提问");
     setChatEnabled(false);
@@ -521,6 +579,37 @@ renderChat();
 setChatEnabled(false);
 setResultActionsEnabled(false);
 updateJobTargetVisibility();
+userApiKey = loadUserKey();
+if (apiKeyInputEl) apiKeyInputEl.value = userApiKey ? userApiKey : "";
+setAiLockedUI(!Boolean(userApiKey && userApiKey.trim()));
+setParsedText("");
+
+if (saveKeyBtn) {
+  saveKeyBtn.addEventListener("click", () => {
+    const k = safeText(apiKeyInputEl && apiKeyInputEl.value).trim();
+    if (!k) {
+      showToast("请输入 API Key", "error");
+      return;
+    }
+    userApiKey = k;
+    saveUserKey(k);
+    showToast("API Key 已保存");
+    setAiLockedUI(false);
+    setAnalyzeEnabled(Boolean(currentText && currentText.trim()));
+  });
+}
+
+if (clearKeyBtn) {
+  clearKeyBtn.addEventListener("click", () => {
+    userApiKey = "";
+    clearUserKey();
+    if (apiKeyInputEl) apiKeyInputEl.value = "";
+    showToast("已清除 Key");
+    setAiLockedUI(true);
+    setAnalyzeEnabled(false);
+    setChatEnabled(false);
+  });
+}
 
 if (chatSendBtn) chatSendBtn.addEventListener("click", onSendChat);
 if (chatInputEl) {
@@ -579,6 +668,18 @@ if (copyResultBtn) {
       if (!currentAnalysisResultText || !currentAnalysisResultText.trim()) return;
       await copyToClipboard(currentAnalysisResultText);
       showToast("已复制");
+    } catch (e) {
+      showToast("复制失败，请手动复制", "error");
+    }
+  });
+}
+
+if (copyParsedBtn) {
+  copyParsedBtn.addEventListener("click", async () => {
+    try {
+      if (!currentText || !currentText.trim()) return;
+      await copyToClipboard(currentText);
+      showToast("原文已复制");
     } catch (e) {
       showToast("复制失败，请手动复制", "error");
     }

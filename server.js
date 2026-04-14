@@ -62,12 +62,9 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 });
 
 app.post("/summarize", async (req, res) => {
-  const apiKey = process.env.DASHSCOPE_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({
-      error: "缺少 DASHSCOPE_API_KEY",
-      hint: "请在 .env 中配置 DASHSCOPE_API_KEY，或通过环境变量注入"
-    });
+  const apiKey = (req.body && req.body.userApiKey) || "";
+  if (typeof apiKey !== "string" || !apiKey.trim()) {
+    return res.status(400).json({ error: "Missing user API key" });
   }
 
   const text = (req.body && req.body.text) || "";
@@ -142,12 +139,9 @@ app.post("/summarize", async (req, res) => {
 });
 
 app.post("/chat", async (req, res) => {
-  const apiKey = process.env.DASHSCOPE_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({
-      error: "缺少 DASHSCOPE_API_KEY",
-      hint: "请在 .env 中配置 DASHSCOPE_API_KEY，或通过环境变量注入"
-    });
+  const apiKey = (req.body && req.body.userApiKey) || "";
+  if (typeof apiKey !== "string" || !apiKey.trim()) {
+    return res.status(400).json({ error: "Missing user API key" });
   }
 
   const currentDocumentText = (req.body && req.body.currentDocumentText) || "";

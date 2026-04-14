@@ -32,7 +32,7 @@
             <div class="title">AI 文档分析</div>
             <div class="subtitle">上传 txt / md / pdf，选择模式，一键生成结果（支持 Markdown 渲染与历史记录）。</div>
             <div class="hint">
-              使用方式：先上传文件 → 选择分析模式 → 点击“生成结果”。生成的结果会自动保存到左侧历史记录。
+              1. Upload a document → 2. Extract text (free) → 3. Add API key → 4. Run AI analysis
             </div>
           </div>
           <div class="metaLine">
@@ -71,7 +71,7 @@
             </label>
 
             <div class="actions">
-              <button id="summarizeBtn" class="btn" type="button" disabled>生成结果</button>
+              <button id="summarizeBtn" class="btn btn--primary" type="button" disabled>生成结果</button>
               <div id="error" class="error" hidden></div>
             </div>
           </div>
@@ -79,7 +79,7 @@
 
         <section class="panel">
           <div class="panelHeader">
-            <div class="panel__title panelHeader__title">Parsed Text (Free)</div>
+            <div class="panel__title panelHeader__title">📄 Extracted Text (Free)</div>
             <div class="resultActions">
               <button id="copyParsedBtn" class="btn btn--secondary btn--sm" type="button" disabled>复制原文</button>
               <button id="viewDocBtn" class="btn btn--secondary btn--sm" type="button" disabled>查看原文</button>
@@ -88,12 +88,12 @@
           <div id="parsedHint" class="hint">
             Document parsing is available for free. Upload a file to extract text. Add your own DashScope API key to unlock AI analysis.
           </div>
-          <pre id="parsedText" class="code" aria-label="parsed-text">（上传文件后这里显示解析文本）</pre>
+          <pre id="parsedText" class="code" aria-label="parsed-text">Upload a document to extract text.</pre>
         </section>
 
         <section class="panel">
             <div class="panelHeader">
-              <div class="panel__title panelHeader__title">AI 结果</div>
+              <div class="panel__title panelHeader__title">✨ AI Analysis (BYOK)</div>
               <div class="resultActions">
                 <button id="saveKeyBtn" class="btn btn--secondary btn--sm" type="button">保存 API Key</button>
                 <button id="clearKeyBtn" class="btn btn--secondary btn--sm" type="button">清除 Key</button>
@@ -102,14 +102,19 @@
                 <button id="exportTxtBtn" class="btn btn--secondary btn--sm" type="button" disabled>导出 TXT</button>
               </div>
             </div>
-            <div class="keyRow">
-              <input id="apiKeyInput" class="field__control" type="password" placeholder="Bring your own DashScope API key to unlock AI analysis" />
-            </div>
-            <div id="aiGate" class="hint">
-              AI analysis is locked. Add your own DashScope API key to use summary / job fit / chat features.
+            <div class="keyCard">
+              <div class="keyRow">
+                <input id="apiKeyInput" class="field__control" type="password" placeholder="Bring your own DashScope API key to unlock AI analysis" />
+              </div>
+              <div class="keyNote">
+                Your API key is stored locally and never sent to our server for storage.
+              </div>
+              <div id="aiGate" class="hint hint--tight">
+                Add your DashScope API key to unlock AI analysis.
+              </div>
             </div>
             <div id="resultToast" class="toast" hidden></div>
-            <div id="summary" class="result markdown" aria-label="summary">（这里显示结果）</div>
+            <div id="summary" class="result markdown" aria-label="summary">Run an analysis to see results here.</div>
 
             <div class="chat">
               <div class="chat__title">继续提问</div>

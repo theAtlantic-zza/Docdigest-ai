@@ -164,6 +164,11 @@ body {
   background: rgba(0, 0, 0, 0.14);
 }
 
+.hint--tight {
+  margin-top: 8px;
+  padding: 8px 10px;
+}
+
 .metaLine {
   display: flex;
   gap: 8px;
@@ -172,7 +177,13 @@ body {
 }
 
 .metaLabel { color: var(--muted2); }
-.metaValue { color: var(--text); }
+.metaValue {
+  color: var(--text);
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .panel {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
@@ -264,6 +275,21 @@ input[type="file"] {
   width: 100%;
 }
 
+.keyCard {
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.14);
+  border-radius: 14px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.keyNote {
+  font-size: 12px;
+  color: var(--muted2);
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
 .field__label {
   font-size: 12px;
   color: var(--muted2);
@@ -295,6 +321,16 @@ input[type="file"] {
   cursor: pointer;
   transition: transform 0.08s ease, background 0.12s ease, border-color 0.12s ease;
   white-space: nowrap;
+}
+
+.btn--primary {
+  background: rgba(110, 168, 254, 0.32);
+  border-color: rgba(110, 168, 254, 0.55);
+}
+
+.btn--primary:hover {
+  background: rgba(110, 168, 254, 0.40);
+  border-color: rgba(110, 168, 254, 0.70);
 }
 
 .btn:hover {

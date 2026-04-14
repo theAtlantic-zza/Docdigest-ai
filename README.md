@@ -83,6 +83,22 @@ Open `http://localhost:3000`.
   - chat follow-ups
   - export/copy AI results
 
+## 🔑 API Key Setup (BYOK)
+
+- You must provide your own **DashScope API key** to run AI analysis.
+- The key is stored in your browser `localStorage` as `dashscope_api_key`.
+- The server does **not** store your key (it is only used in the current request).
+
+## 🌐 Deployment
+
+### Railway
+
+- Set **Root Directory** to `docdigest/`
+- Add the environment variable:
+  - `PORT` is handled by Railway automatically
+  - `DASHSCOPE_API_KEY` is **not required** for production because this project uses BYOK (user key in requests).  
+    (Optional for local dev if you customize the project.)
+
 ## 🛠 Tech Stack
 
 - Node.js
@@ -90,6 +106,10 @@ Open `http://localhost:3000`.
 - Vanilla HTML/CSS/JS
 - DashScope / 通义千问 API (Qwen compatible-mode Chat)
 - pdf-parse
+
+## 📌 Design Philosophy
+
+Free parsing first, AI optional — making document understanding accessible without cost.
 
 ## 📦 Project Structure
 

@@ -42,6 +42,10 @@ let analyzeInProgress = false;
 let currentJobTarget = "";
 let userApiKey = "";
 
+const EMPTY_PARSED = "Upload a document to extract text.";
+const EMPTY_AI = "Run an analysis to see results here.";
+const REQUIRE_KEY_TOOLTIP = "Requires your own API key";
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -95,6 +99,7 @@ function setAiLockedUI(locked) {
   if (summarizeBtn) summarizeBtn.disabled = locked || !Boolean(currentText && currentText.trim());
   setChatEnabled(!locked && Boolean(currentText && currentText.trim() && currentAnalysisResultText.trim()));
   setResultActionsEnabled(Boolean(currentAnalysisResultText && currentAnalysisResultText.trim()));
+  if (summarizeBtn) summarizeBtn.title = locked ? REQUIRE_KEY_TOOLTIP : "";
 }
 
 let toastTimer = null;
@@ -112,6 +117,7 @@ function showToast(message, kind = "ok") {
 function setAnalyzeEnabled(enabled) {
   if (!summarizeBtn) return;
   summarizeBtn.disabled = !enabled;
+  summarizeBtn.title = summarizeBtn.disabled && (!userApiKey || !userApiKey.trim()) ? REQUIRE_KEY_TOOLTIP : "";
 }
 
 function setResultActionsEnabled(enabled) {
@@ -127,6 +133,13 @@ function setChatEnabled(enabled) {
   if (!chatSendBtn) return;
   const can = Boolean(enabled) && Boolean(userApiKey && userApiKey.trim());
   chatSendBtn.disabled = !can;
+  chatSendBtn.title = chatSendBtn.disabled && (!userApiKey || !userApiKey.trim()) ? REQUIRE_KEY_TOOLTIP : "";
+  if (chatInputEl) {
+    chatInputEl.disabled = !Boolean(userApiKey && userApiKey.trim());
+    chatInputEl.placeholder = chatInputEl.disabled
+      ? "Add your API key to enable follow-up questions"
+      : "Ask a follow-up question about the current document…";
+  }
   if (chatHintEl) {
     chatHintEl.textContent = can
       ? "提示：你可以继续追问，例如“提炼三个亮点 / 适合什么岗位 / 改写更专业”。"
@@ -139,7 +152,7 @@ function setAnalyzeLoading(loading) {
   if (loading) {
     analyzeInProgress = true;
     summarizeBtn.dataset.prevText = summarizeBtn.textContent || "";
-    summarizeBtn.textContent = "AI 正在分析...";
+    summarizeBtn.textContent = "Analyzing document...";
     summarizeBtn.disabled = true;
     setResultActionsEnabled(false);
   } else {
@@ -158,7 +171,7 @@ function setSummaryMarkdown(md) {
 
 function setParsedText(text) {
   const t = safeText(text);
-  if (parsedTextEl) parsedTextEl.textContent = t || "（上传文件后这里显示解析文本）";
+  if (parsedTextEl) parsedTextEl.textContent = t || EMPTY_PARSED;
   if (output) output.textContent = t || "（这里显示文件内容）";
   setResultActionsEnabled(Boolean(t && t.trim()));
 }
@@ -226,7 +239,7 @@ function renderChat() {
     const empty = document.createElement("div");
     empty.className = "chatItem";
     empty.style.cursor = "default";
-    empty.innerHTML = `<div class="chatItem__role">提示</div><div class="chatItem__content">在这里继续提问，AI 会基于当前文档内容回答。</div>`;
+    empty.innerHTML = `<div class="chatItem__role">Tip</div><div class="chatItem__content">Ask follow-up questions here. The AI will answer based on the current document.</div>`;
     chatHistoryEl.appendChild(empty);
     return;
   }
@@ -299,7 +312,7 @@ function renderHistory() {
     const empty = document.createElement("div");
     empty.className = "historyItem";
     empty.style.cursor = "default";
-    empty.innerHTML = `<div class="historyItem__title">暂无历史记录</div><div class="historyItem__meta">生成结果后会自动保存</div>`;
+    empty.innerHTML = `<div class="historyItem__title">No history yet.</div><div class="historyItem__meta">Results will appear here.</div>`;
     historyListEl.appendChild(empty);
     return;
   }
@@ -347,7 +360,7 @@ function openHistory(id) {
   if (summaryTypeEl && it.mode) summaryTypeEl.value = it.mode;
   setJobTargetValue(currentJobTarget);
   updateJobTargetVisibility();
-  setSummaryMarkdown(currentAnalysisResultText || "（这里显示结果）");
+  setSummaryMarkdown(currentAnalysisResultText || EMPTY_AI);
   setAnalyzeEnabled(Boolean(currentText && currentText.trim()) && Boolean(userApiKey && userApiKey.trim()));
   showError("");
   renderHistory();
@@ -365,7 +378,7 @@ function resetWorkspace() {
   chatMessages = [];
   if (filenameEl) filenameEl.textContent = "-";
   setParsedText("");
-  setSummaryMarkdown("（这里显示结果）");
+  setSummaryMarkdown(EMPTY_AI);
   setAnalyzeEnabled(false);
   showError("");
   setResultActionsEnabled(false);
@@ -392,11 +405,11 @@ async function uploadAndRead(file) {
   const fd = new FormData();
   fd.append("file", file);
 
-  if (parsedTextEl) parsedTextEl.textContent = "读取中...";
+  if (parsedTextEl) parsedTextEl.textContent = "Extracting text...";
   if (output) output.textContent = "读取中...";
   showError("");
   setAnalyzeEnabled(false);
-  setSummaryMarkdown("（这里显示结果）");
+  setSummaryMarkdown(EMPTY_AI);
 
   const res = await fetch("/upload", { method: "POST", body: fd });
   const data = await res.json().catch(() => ({}));
@@ -439,6 +452,7 @@ if (form) {
       chatMessages = [];
       if (filenameEl) filenameEl.textContent = currentFileName;
       setParsedText(currentText);
+      showToast("Text extracted successfully");
       setAnalyzeEnabled(Boolean(currentText && currentText.trim()) && Boolean(userApiKey && userApiKey.trim()));
       if (!currentText || !currentText.trim()) {
         showError("文件读取成功，但未提取到可分析的文本内容");
@@ -450,6 +464,7 @@ if (form) {
     } catch (err) {
       showError(err && err.message ? err.message : "上传失败");
       setParsedText("");
+      if (parsedTextEl) parsedTextEl.textContent = "Failed to extract text. Please try another file.";
       setAnalyzeEnabled(false);
       setChatEnabled(false);
       setResultActionsEnabled(false);
@@ -483,7 +498,7 @@ if (summarizeBtn) {
     } else {
       currentJobTarget = "";
     }
-    setSummaryMarkdown("AI 正在分析...");
+    setSummaryMarkdown("Analyzing document...");
     setAnalyzeLoading(true);
 
     try {
@@ -509,7 +524,7 @@ if (summarizeBtn) {
       setChatEnabled(Boolean(currentText && currentText.trim() && currentAnalysisResultText.trim()));
     } catch (err) {
       showError(err && err.message ? err.message : "生成结果失败");
-      setSummaryMarkdown("（这里显示结果）");
+      setSummaryMarkdown(EMPTY_AI);
       currentAnalysisResultText = "";
       setChatEnabled(false);
       setResultActionsEnabled(false);
@@ -583,6 +598,7 @@ userApiKey = loadUserKey();
 if (apiKeyInputEl) apiKeyInputEl.value = userApiKey ? userApiKey : "";
 setAiLockedUI(!Boolean(userApiKey && userApiKey.trim()));
 setParsedText("");
+setSummaryMarkdown(EMPTY_AI);
 
 if (saveKeyBtn) {
   saveKeyBtn.addEventListener("click", () => {

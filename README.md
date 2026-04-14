@@ -1,63 +1,68 @@
-# DocDigest — AI Document Analyzer & Job Fit Insights
+# DocDigest — AI Document Analyzer & Job Fit Assistant
 
-**One-liner:** Upload a resume/document (`txt/md/pdf`), run AI analysis (summary/bullets/outline/resume tips/job-fit), chat follow-ups, and export results — with local history.
+**One-liner:** Turn resumes and documents (`txt / md / pdf`) into actionable insights — summaries, bullet points, outlines, resume improvement tips, and **job fit analysis** — with chat follow-ups and export-ready results.
 
-## Overview
+## Why this project
 
-DocDigest is a lightweight, local-first AI document analysis tool built with Node.js + Express and vanilla HTML/CSS/JS.  
-It focuses on **practical resume analysis + job fit insights** (岗位匹配分析), and stays easy to run for demos and portfolio links.
+Most “document summarizers” stop at a single output. DocDigest is built to feel like a small, real product:
+
+- **Document → Insight**: not only summarize, but structure, extract, and advise.
+- **Job fit** (岗位匹配分析): analyze a resume against a target role and suggest concrete next steps.
+- **Local-first**: runs on your machine, keeps history in the browser (no database).
+
+## Core Features
+
+- **File upload & text extraction**: `txt / md / pdf`
+- **Analysis modes**
+  - **Summary** (concise)
+  - **Key points** (bullet points)
+  - **Outline** (structured)
+  - **Resume improvement suggestions**
+  - **Job fit analysis** (岗位匹配分析) with a target role input
+- **Chat follow-ups**: keep asking questions based on the current document (session-only)
+- **Result usability**
+  - Markdown rendering
+  - Copy to clipboard
+  - Export raw Markdown / plain text
+- **History**: automatically saved in `localStorage` (open, switch, clear)
 
 ## Screenshots
 
-> Add the following files to enable screenshots in GitHub.
+> Place these files under `docdigest/screenshots/` to enable the preview on GitHub.
 
 ![Home](screenshots/home.png)
 ![Resume analysis](screenshots/resume-analysis.png)
 ![Job fit analysis](screenshots/job-fit-analysis.png)
 
-## Key Features
-
-- **Upload & parse**: `txt / md / pdf`
-- **Analysis modes**
-  - Summary
-  - Bullet points
-  - Outline
-  - Resume improvement suggestions
-  - **Job fit analysis (岗位匹配分析)** with a target role input
-- **Chat follow-ups**: ask more questions based on the current document (session-only)
-- **Local history**: saved in `localStorage` (no database)
-- **Markdown rendering** for AI output
-- **Export & copy**
-  - Copy result to clipboard
-  - Export raw Markdown
-  - Export plain text
-
 ## Tech Stack
 
-- **Backend**: Node.js, Express
-- **AI API**: DashScope (Qwen, compatible-mode Chat Completions)
-- **PDF parsing**: `pdf-parse`
-- **Frontend**: Vanilla HTML/CSS/JS
-- **Markdown rendering**: `marked` (CDN)
+- **Node.js + Express** for the server
+- **Vanilla HTML/CSS/JS** for the UI (no framework)
+- **DashScope / Qwen** (compatible-mode Chat Completions) for AI analysis
+- **pdf-parse** for PDF text extraction
 
-## Local Setup
+## Project Structure
+
+```text
+docdigest/
+  server.js                # Express server: upload, summarize, chat
+  public/
+    index.html             # UI layout
+    style.css              # UI styling
+    main.js                # Client logic: analysis, history, chat, export
+  .env.example             # Environment variables template
+  .gitignore
+  LICENSE
+  README.md
+  screenshots/             # (optional) add screenshots for GitHub preview
+```
+
+## Getting Started
 
 ```bash
 cd docdigest
 npm install
 cp .env.example .env
-```
-
-Edit `.env`:
-
-```env
-DASHSCOPE_API_KEY=your_api_key_here
-PORT=3000
-```
-
-Run:
-
-```bash
 npm start
 ```
 
@@ -65,21 +70,38 @@ Open `http://localhost:3000`.
 
 ## Environment Variables
 
-- `DASHSCOPE_API_KEY` (required): your DashScope API key
-- `PORT` (optional): server port, default `3000`
+Create a `.env` file (or export env vars in your shell):
+
+```env
+DASHSCOPE_API_KEY=your_api_key_here
+PORT=3000
+```
+
+- `DASHSCOPE_API_KEY` (required): DashScope API key
+- `PORT` (optional): server port (default `3000`)
+
+## Usage Flow
+
+1. Upload a document (`txt / md / pdf`).
+2. Choose an analysis mode.
+3. (Optional) If you select **Job fit analysis**, fill in the **Target role**.
+4. Click **Generate** to get the result.
+5. Use **Copy / Export** to reuse the output.
+6. Ask follow-up questions in **Chat** based on the current document.
 
 ## Example Use Cases
 
-- **Resume review**: summarize, extract strengths, suggest improvements
-- **Job fit analysis**: input a target role and get match score, gaps, and next actions
-- **Document digest**: quickly outline long notes or reports
+- **Resume review**: identify strengths, rewrite wording, and improve structure.
+- **Job fit analysis**: evaluate match, gaps, and next actions for a target role.
+- **Document digest**: turn long notes into an outline + bullet points.
 
 ## Roadmap
 
-- [ ] Streaming responses (better UX for long outputs)
-- [ ] Safer markdown rendering (sanitization)
-- [ ] Better chat context management (multi-turn memory per document)
-- [ ] Share/export a single analysis as a standalone file
+- Deployment: Docker / one-click run
+- Better “chat with document”: multi-turn memory per document
+- More file types (e.g., docx) and better text extraction
+- Multi-model support (configurable model/provider)
+- Streaming responses for long outputs
 
 ## License
 

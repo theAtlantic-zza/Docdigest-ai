@@ -106,6 +106,9 @@
               <div class="keyRow">
                 <input id="apiKeyInput" class="field__control" type="password" placeholder="Bring your own DashScope API key to unlock AI analysis" />
               </div>
+            <div class="keyRow" style="margin-top:8px;">
+              <input id="baseUrlInput" class="field__control" type="text" placeholder="Base URL (OpenAI compatible)" />
+            </div>
               <div class="keyNote">
                 Your API key is stored locally and never sent to our server for storage.
               </div>
@@ -141,6 +144,11 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+      import * as pdfjsLib from "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/legacy/build/pdf.mjs";
+      // Expose to main.js (non-module)
+      window.pdfjsLib = pdfjsLib;
+    </script>
     <script src="./main.js"></script>
   </body>
 </html>

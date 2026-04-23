@@ -61,6 +61,93 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   }
 });
 
+app.post("/ocr", async (req, res) => {
+  const apiKey = (req.body && req.body.userApiKey) || "";
+  const baseUrl =
+    (req.body && req.body.baseUrl) ||
+    "https://dashscope.aliyuncs.com/compatible-mode/v1";
+  const imageDataUrl = (req.body && req.body.imageDataUrl) || "";
+
+  if (typeof apiKey !== "string" || !apiKey.trim()) {
+    return res.status(400).json({ error: "Missing user API key" });
+  }
+  if (typeof baseUrl !== "string" || !baseUrl.trim()) {
+    return res.status(400).json({ error: "baseUrl 不能为空" });
+  }
+  if (typeof imageDataUrl !== "string" || !imageDataUrl.startsWith("data:image/")) {
+    return res.status(400).json({ error: "未收到图片数据" });
+  }
+
+  const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
+
+  try {
+    const resp = await axios.post(
+      endpoint,
+      {
+        model: "qwen-vl-ocr-latest",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "image_url", image_url: { url: imageDataUrl } },
+              {
+                type: "text",
+                text:
+                  'Extract ALL text from the image. Return ONLY valid JSON: {"text":"..."}',
+              },
+            ],
+          },
+        ],
+        temperature: 0,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 60000,
+      }
+    );
+
+    const content =
+      resp.data &&
+      resp.data.choices &&
+      resp.data.choices[0] &&
+      resp.data.choices[0].message &&
+      resp.data.choices[0].message.content;
+
+    if (!content) return res.status(500).json({ error: "OCR 返回内容为空" });
+
+    // Try strict JSON first, fallback to raw text
+    let text = "";
+    try {
+      const raw = String(content).trim();
+      const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+      const candidate = fenced && fenced[1] ? fenced[1].trim() : raw;
+      const first = candidate.indexOf("{");
+      const last = candidate.lastIndexOf("}");
+      const jsonText =
+        first >= 0 && last > first ? candidate.slice(first, last + 1) : candidate;
+      const parsed = JSON.parse(jsonText);
+      text = parsed && typeof parsed.text === "string" ? parsed.text : "";
+    } catch {
+      text = String(content);
+    }
+
+    text = (text || "").trim();
+    if (!text) return res.status(422).json({ error: "OCR 未识别到文本" });
+    res.json({ text });
+  } catch (err) {
+    const status = err && err.response && err.response.status;
+    const detail = err && err.response && err.response.data;
+    const message =
+      (detail && (detail.message || detail.error || detail.msg)) ||
+      (err && err.message) ||
+      "调用 OCR 失败";
+    res.status(500).json({ error: "OCR 失败", status, message, detail });
+  }
+});
+
 app.post("/summarize", async (req, res) => {
   const apiKey = (req.body && req.body.userApiKey) || "";
   if (typeof apiKey !== "string" || !apiKey.trim()) {

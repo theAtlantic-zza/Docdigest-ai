@@ -32,6 +32,8 @@ const docModalCloseBtn = document.getElementById("docModalCloseBtn");
 
 const LS_KEY = "docdigest.history.v1";
 const API_KEY_LS = "dashscope_api_key";
+const BASE_URL_LS = "dashscope_base_url";
+const DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
 
 let currentText = "";
 let currentFileName = "-";
@@ -41,6 +43,7 @@ let chatMessages = []; // session-only
 let analyzeInProgress = false;
 let currentJobTarget = "";
 let userApiKey = "";
+let userBaseUrl = "";
 
 const EMPTY_PARSED = "Upload a document to extract text.";
 const EMPTY_AI = "Run an analysis to see results here.";
@@ -79,6 +82,26 @@ function loadUserKey() {
   } catch {
     return "";
   }
+}
+
+function loadBaseUrl() {
+  try {
+    return safeText(localStorage.getItem(BASE_URL_LS)) || DEFAULT_BASE_URL;
+  } catch {
+    return DEFAULT_BASE_URL;
+  }
+}
+
+function saveBaseUrl(url) {
+  try {
+    localStorage.setItem(BASE_URL_LS, url);
+  } catch {}
+}
+
+function clearBaseUrl() {
+  try {
+    localStorage.removeItem(BASE_URL_LS);
+  } catch {}
 }
 
 function saveUserKey(key) {
@@ -417,6 +440,42 @@ async function uploadAndRead(file) {
   return { fileName: data.filename || file.name, text: data.text ?? "" };
 }
 
+async function renderPdfFirstPageToDataUrl(file) {
+  const pdfjs = window.pdfjsLib;
+  if (!pdfjs) throw new Error("PDF 渲染库未加载，请刷新页面后重试");
+  const workerSrc = new URL(
+    "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/legacy/build/pdf.worker.min.mjs"
+  ).toString();
+  pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data: buffer }).promise;
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 2 });
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("无法创建画布上下文");
+  canvas.width = Math.floor(viewport.width);
+  canvas.height = Math.floor(viewport.height);
+  await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+  return canvas.toDataURL("image/png");
+}
+
+async function ocrImage(imageDataUrl) {
+  const res = await fetch("/ocr", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      imageDataUrl,
+      userApiKey,
+      baseUrl: userBaseUrl || DEFAULT_BASE_URL,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "OCR 失败，请稍后重试");
+  return safeText(data.text);
+}
+
 async function summarize(text, type) {
   const jobTitle = type === "job_match" ? getJobTargetValue() : "";
   const res = await fetch("/summarize", {
@@ -455,7 +514,46 @@ if (form) {
       showToast("Text extracted successfully");
       setAnalyzeEnabled(Boolean(currentText && currentText.trim()) && Boolean(userApiKey && userApiKey.trim()));
       if (!currentText || !currentText.trim()) {
-        showError("文件读取成功，但未提取到可分析的文本内容");
+        // Offer OCR fallback for scanned/screenshot PDFs
+        const isPdf = /\.pdf$/i.test(fileName || file.name || "");
+        if (isPdf) {
+          showError("未提取到文本（可能是截图/扫描 PDF）。可尝试 OCR 识别第 1 页后再分析。");
+          if (userApiKey && userApiKey.trim()) {
+            setAnalyzeEnabled(false);
+            setSummaryMarkdown(EMPTY_AI);
+            setResultActionsEnabled(false);
+            setChatEnabled(false);
+            // Inline CTA
+            const btn = document.createElement("button");
+            btn.className = "btn btn--secondary btn--sm";
+            btn.type = "button";
+            btn.textContent = "尝试 OCR（第 1 页）";
+            btn.style.marginTop = "8px";
+            btn.addEventListener("click", async () => {
+              showError("");
+              try {
+                btn.disabled = true;
+                btn.textContent = "OCR 识别中...";
+                const dataUrl = await renderPdfFirstPageToDataUrl(file);
+                const ocrText = await ocrImage(dataUrl);
+                currentText = ocrText;
+                setParsedText(currentText);
+                showToast("OCR completed");
+                setAnalyzeEnabled(Boolean(currentText && currentText.trim()) && Boolean(userApiKey && userApiKey.trim()));
+              } catch (err2) {
+                showError(err2 && err2.message ? err2.message : "OCR 失败");
+              } finally {
+                btn.disabled = false;
+                btn.textContent = "尝试 OCR（第 1 页）";
+              }
+            });
+            if (parsedHintEl && parsedHintEl.parentNode) {
+              parsedHintEl.parentNode.appendChild(btn);
+            }
+          }
+        } else {
+          showError("文件读取成功，但未提取到可分析的文本内容");
+        }
       }
       renderChat();
       setChatEnabled(false);
@@ -596,6 +694,9 @@ setResultActionsEnabled(false);
 updateJobTargetVisibility();
 userApiKey = loadUserKey();
 if (apiKeyInputEl) apiKeyInputEl.value = userApiKey ? userApiKey : "";
+const baseUrlInputEl = document.getElementById("baseUrlInput");
+userBaseUrl = loadBaseUrl();
+if (baseUrlInputEl) baseUrlInputEl.value = userBaseUrl;
 setAiLockedUI(!Boolean(userApiKey && userApiKey.trim()));
 setParsedText("");
 setSummaryMarkdown(EMPTY_AI);
@@ -603,12 +704,15 @@ setSummaryMarkdown(EMPTY_AI);
 if (saveKeyBtn) {
   saveKeyBtn.addEventListener("click", () => {
     const k = safeText(apiKeyInputEl && apiKeyInputEl.value).trim();
+    const b = safeText(baseUrlInputEl && baseUrlInputEl.value).trim() || DEFAULT_BASE_URL;
     if (!k) {
       showToast("请输入 API Key", "error");
       return;
     }
     userApiKey = k;
     saveUserKey(k);
+    userBaseUrl = b;
+    saveBaseUrl(b);
     showToast("API Key 已保存");
     setAiLockedUI(false);
     setAnalyzeEnabled(Boolean(currentText && currentText.trim()));
@@ -620,6 +724,9 @@ if (clearKeyBtn) {
     userApiKey = "";
     clearUserKey();
     if (apiKeyInputEl) apiKeyInputEl.value = "";
+    userBaseUrl = DEFAULT_BASE_URL;
+    clearBaseUrl();
+    if (baseUrlInputEl) baseUrlInputEl.value = DEFAULT_BASE_URL;
     showToast("已清除 Key");
     setAiLockedUI(true);
     setAnalyzeEnabled(false);

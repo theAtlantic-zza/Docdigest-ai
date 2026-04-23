@@ -49,6 +49,8 @@ const EMPTY_PARSED = "Upload a document to extract text.";
 const EMPTY_AI = "Run an analysis to see results here.";
 const REQUIRE_KEY_TOOLTIP = "Requires your own API key";
 
+let ocrCtaBtn = null;
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -68,6 +70,24 @@ function modeLabel(mode) {
 
 function safeText(v) {
   return typeof v === "string" ? v : "";
+}
+
+function normalizeExtractedText(raw) {
+  const t = safeText(raw)
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    // common pdf-parse page markers without real text
+    .replace(/^\s*--\s*\d+\s+of\s+\d+\s*--\s*$/gim, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return t;
+}
+
+function clearOcrCta() {
+  if (ocrCtaBtn && ocrCtaBtn.parentNode) {
+    ocrCtaBtn.parentNode.removeChild(ocrCtaBtn);
+  }
+  ocrCtaBtn = null;
 }
 
 function showError(msg) {
@@ -504,7 +524,8 @@ if (form) {
       const { fileName, text } = await uploadAndRead(file);
       activeId = null;
       currentFileName = fileName;
-      currentText = safeText(text);
+      clearOcrCta();
+      currentText = normalizeExtractedText(text);
       currentAnalysisResultText = "";
       currentJobTarget = "";
       setJobTargetValue("");
@@ -513,47 +534,47 @@ if (form) {
       setParsedText(currentText);
       showToast("Text extracted successfully");
       setAnalyzeEnabled(Boolean(currentText && currentText.trim()) && Boolean(userApiKey && userApiKey.trim()));
-      if (!currentText || !currentText.trim()) {
-        // Offer OCR fallback for scanned/screenshot PDFs
-        const isPdf = /\.pdf$/i.test(fileName || file.name || "");
-        if (isPdf) {
-          showError("未提取到文本（可能是截图/扫描 PDF）。可尝试 OCR 识别第 1 页后再分析。");
-          if (userApiKey && userApiKey.trim()) {
-            setAnalyzeEnabled(false);
-            setSummaryMarkdown(EMPTY_AI);
-            setResultActionsEnabled(false);
-            setChatEnabled(false);
-            // Inline CTA
-            const btn = document.createElement("button");
-            btn.className = "btn btn--secondary btn--sm";
-            btn.type = "button";
-            btn.textContent = "尝试 OCR（第 1 页）";
-            btn.style.marginTop = "8px";
-            btn.addEventListener("click", async () => {
-              showError("");
-              try {
-                btn.disabled = true;
-                btn.textContent = "OCR 识别中...";
-                const dataUrl = await renderPdfFirstPageToDataUrl(file);
-                const ocrText = await ocrImage(dataUrl);
-                currentText = ocrText;
-                setParsedText(currentText);
-                showToast("OCR completed");
-                setAnalyzeEnabled(Boolean(currentText && currentText.trim()) && Boolean(userApiKey && userApiKey.trim()));
-              } catch (err2) {
-                showError(err2 && err2.message ? err2.message : "OCR 失败");
-              } finally {
-                btn.disabled = false;
-                btn.textContent = "尝试 OCR（第 1 页）";
-              }
-            });
-            if (parsedHintEl && parsedHintEl.parentNode) {
-              parsedHintEl.parentNode.appendChild(btn);
+      const isPdf = /\.pdf$/i.test(fileName || file.name || "");
+      const looksLikeNoTextLayer = isPdf && currentText.length < 30;
+      if (looksLikeNoTextLayer) {
+        showError("未提取到可分析的文本（可能是截图/扫描 PDF）。可尝试 OCR 识别第 1 页后再分析。");
+        if (userApiKey && userApiKey.trim()) {
+          setAnalyzeEnabled(false);
+          setSummaryMarkdown(EMPTY_AI);
+          setResultActionsEnabled(false);
+          setChatEnabled(false);
+
+          const btn = document.createElement("button");
+          btn.className = "btn btn--secondary btn--sm";
+          btn.type = "button";
+          btn.textContent = "尝试 OCR（第 1 页）";
+          btn.style.marginTop = "8px";
+          btn.addEventListener("click", async () => {
+            showError("");
+            try {
+              btn.disabled = true;
+              btn.textContent = "OCR 识别中...";
+              const dataUrl = await renderPdfFirstPageToDataUrl(file);
+              const ocrText = await ocrImage(dataUrl);
+              currentText = normalizeExtractedText(ocrText);
+              clearOcrCta();
+              setParsedText(currentText);
+              showToast("OCR completed");
+              setAnalyzeEnabled(Boolean(currentText && currentText.trim()) && Boolean(userApiKey && userApiKey.trim()));
+            } catch (err2) {
+              showError(err2 && err2.message ? err2.message : "OCR 失败");
+            } finally {
+              btn.disabled = false;
+              btn.textContent = "尝试 OCR（第 1 页）";
             }
+          });
+          ocrCtaBtn = btn;
+          if (parsedHintEl && parsedHintEl.parentNode) {
+            parsedHintEl.parentNode.appendChild(btn);
           }
-        } else {
-          showError("文件读取成功，但未提取到可分析的文本内容");
         }
+      } else if (!currentText || !currentText.trim()) {
+        showError("文件读取成功，但未提取到可分析的文本内容");
       }
       renderChat();
       setChatEnabled(false);
@@ -561,6 +582,7 @@ if (form) {
       setAiLockedUI(!Boolean(userApiKey && userApiKey.trim()));
     } catch (err) {
       showError(err && err.message ? err.message : "上传失败");
+      clearOcrCta();
       setParsedText("");
       if (parsedTextEl) parsedTextEl.textContent = "Failed to extract text. Please try another file.";
       setAnalyzeEnabled(false);

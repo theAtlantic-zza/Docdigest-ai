@@ -1,73 +1,115 @@
+<!-- 顶部 banner -->
 <div align="center">
 
-# DocDigest — AI Document Analyzer & Job Fit Assistant
+# 📄 DocDigest
 
-**From raw documents to hiring-ready insights.**
+<p>
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=18&duration=2800&pause=900&color=10B981&center=true&vCenter=true&width=600&lines=AI+Document+Analyzer+%26+Job+Fit+Assistant;From+raw+documents+to+hiring-ready+insights;%E6%96%87%E6%A1%A3%E6%91%98%E8%A6%81+%C2%B7+%E7%AE%80%E5%8E%86%E4%BC%98%E5%8C%96+%C2%B7+%E5%B2%97%E4%BD%8D%E5%8C%B9%E9%85%8D+%C2%B7+%E8%BF%BD%E9%97%AE%E5%AF%B9%E8%AF%9D" alt="Typing animation" />
+</p>
 
-Upload `txt / md / pdf` → generate structured analysis → chat follow-ups → export results.
+**Local-first AI document analyzer for resume workflows and high-signal reading**
 
-![Node.js](https://img.shields.io/badge/Node.js-≥18-3c873a?logo=node.js&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-blue)
-![Status](https://img.shields.io/badge/Status-In%20Progress-6ea8fe)
+<p>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node.js-≥18-3c873a?style=for-the-badge&logo=nodedotjs&logoColor=white"/></a>
+  <a href="https://expressjs.com"><img src="https://img.shields.io/badge/Express-4-000?style=for-the-badge&logo=express&logoColor=white"/></a>
+  <a href="https://help.aliyun.com/zh/model-studio/"><img src="https://img.shields.io/badge/DashScope-Qwen-FF6A00?style=for-the-badge"/></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge"/></a>
+  <img src="https://img.shields.io/badge/Status-In%20Progress-6ea8fe?style=for-the-badge"/>
+</p>
+
+[**🌐 Live Demo**](https://docdigest-ai-production.up.railway.app) · [**🚀 Quick Start**](#-quick-start) · [**🎯 Use Cases**](#-use-cases) · [**🗺 Roadmap**](#-roadmap)
 
 </div>
 
-![Home](screenshots/home.png)
-![Resume Analysis](screenshots/resume-analysis.png)
-![Job Fit](screenshots/job-fit-analysis.png)
+---
+
+## 📸 Preview
+
+| Home | Resume Analysis | Job Fit |
+|---|---|---|
+| ![Home](screenshots/home.png) | ![Resume Analysis](screenshots/resume-analysis.png) | ![Job Fit](screenshots/job-fit-analysis.png) |
+
+---
 
 ## ✨ What is this
 
-DocDigest is a **local-first AI document analyzer** designed for resume workflows and high-signal reading.
-Instead of producing one generic summary, it helps you **understand**, **improve**, and **match** a resume to a target role — and lets you keep asking follow-up questions on top of the current document context.
+DocDigest is a **local-first AI document analyzer** built for resume workflows and dense reading.
 
-Built to feel like a small product you can actually demo, not a one-off script.（英文为主，少量中文注释）
+Instead of producing one generic summary, it helps you:
+
+- 🧐 **Understand** — extract structured insights from `.txt / .md / .pdf`
+- ✏️ **Improve** — get actionable rewrites and structure tips for your resume
+- 🎯 **Match** — input a target role, get fit score + strengths/gaps + next steps
+
+> Built to feel like a **small product you can demo**, not a one-off script.
+
+---
 
 ## 🚀 Key Capabilities
 
-### 📄 Document Understanding
+<table>
+<tr>
+<td width="50%" valign="top">
 
-- Upload & extract text from `txt / md / pdf`
-- Generate **Summary**, **Key Points**, and **Outline**
-- Render AI output as Markdown for readability
+### 📄 Document Understanding
+- Upload `.txt` / `.md` / `.pdf`
+- Extract text locally (PDF via `pdf-parse`)
+- AI generates **Summary**, **Key Points**, **Outline**
+- Markdown rendering for readability
 
 ### 💼 Resume & Job Fit
+- Actionable resume improvement suggestions
+- **岗位匹配分析** with a target role input
+- Match score + strengths + gaps + next steps
 
-- Resume improvement suggestions (actionable edits, structure, clarity)
-- **Job fit analysis (岗位匹配分析)** with a **Target role** input
-  - match score & rationale
-  - strengths, gaps, and recommended next steps
+</td>
+<td width="50%" valign="top">
 
-### 💬 Interactive Analysis
-
-- Chat-style follow-ups based on the **current document + current analysis**
-- Session-only chat history (no server persistence)
+### 💬 Interactive Follow-ups
+- Chat on top of **current document + current analysis**
+- Session-only history (no server persistence)
+- Stays grounded in document context
 
 ### 📤 Shareable Output
+- One-click copy to clipboard
+- Export raw **Markdown** or **plain text**
+- Local analysis history in `localStorage`
 
-- Copy result to clipboard
-- Export **raw Markdown** / **plain text**
-- Local analysis history stored in `localStorage` (open/switch/clear)
+</td>
+</tr>
+</table>
 
-## 🧠 How it works
+### 🔑 BYOK Mode
 
-1. **Upload** a document (`txt / md / pdf`)
-2. **Parse** text locally on the server (PDF via `pdf-parse`)
-3. **Send** the document context to DashScope / Qwen for analysis
-4. **Render** Markdown output and enable export / follow-up chat
+- **Free**: upload + extract/preview/copy text — no API key needed
+- **BYOK**: add your DashScope key in browser to unlock all AI features
+- Key stored in `localStorage` only — server **never** persists it
 
-## 📸 Demo
+---
 
-The README screenshots above are expected at:
+## 🧠 How It Works
 
-- `screenshots/home.png`
-- `screenshots/resume-analysis.png`
-- `screenshots/job-fit-analysis.png`
+```
+┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+│  Upload  │ ─→ │  Parse   │ ─→ │  Analyze │ ─→ │  Render  │
+│ (txt/pdf)│    │ (server) │    │ (Qwen AI)│    │+ Export  │
+└──────────┘    └──────────┘    └──────────┘    └──────────┘
+                                       │
+                                       ↓
+                                ┌──────────────┐
+                                │ Chat follow- │
+                                │ ups grounded │
+                                │ in context   │
+                                └──────────────┘
+```
 
-## ⚡ Getting Started
+---
+
+## 🚀 Quick Start
 
 ```bash
-cd docdigest
+git clone https://github.com/theAtlantic-zza/Docdigest-ai.git
+cd Docdigest-ai/docdigest
 npm install
 cp .env.example .env
 npm start
@@ -75,84 +117,100 @@ npm start
 
 Open `http://localhost:3000`.
 
-## Usage Modes
+<details>
+<summary><b>🔑 Configure DashScope API key (optional, unlocks AI features)</b></summary>
 
-- **Free Mode**: upload `txt / md / pdf` and extract/preview/copy the parsed text (no API key required).
-- **BYOK Mode** (Bring Your Own Key): add your own DashScope API key to unlock all AI features:
-  - analysis modes (summary / outline / resume tips / job fit)
-  - chat follow-ups
-  - export/copy AI results
+**Option 1: In-browser** — paste your key into the API Key panel.
+Stored in `localStorage` as `dashscope_api_key`. Server never stores it.
 
-## 🔑 API Key Setup (BYOK)
-
-- You must provide your own **DashScope API key** to run AI analysis.
-- The key is stored in your browser `localStorage` as `dashscope_api_key`.
-- The server does **not** store your key (it is only used in the current request).
-
-## 🌐 Deployment
-
-### Railway
-
-- Set **Root Directory** to `docdigest/`
-- Add the environment variable:
-  - `PORT` is handled by Railway automatically
-  - `DASHSCOPE_API_KEY` is **not required** for production because this project uses BYOK (user key in requests).  
-    (Optional for local dev if you customize the project.)
-
-## 🛠 Tech Stack
-
-- Node.js
-- Express
-- Vanilla HTML/CSS/JS
-- DashScope / 通义千问 API (Qwen compatible-mode Chat)
-- pdf-parse
-
-## 📌 Design Philosophy
-
-Free parsing first, AI optional — making document understanding accessible without cost.
-
-## 📦 Project Structure
-
-```text
-docdigest/
-  server.js                # upload, summarize, chat
-  public/
-    index.html             # UI
-    style.css              # styling
-    main.js                # client logic (history/chat/export)
-  .env.example
-  LICENSE
-  README.md
-  screenshots/
-```
-
-## Environment Variables
-
-Create `.env`:
+**Option 2: `.env` for local dev**
 
 ```env
 DASHSCOPE_API_KEY=your_api_key_here
 PORT=3000
 ```
 
-- `DASHSCOPE_API_KEY` (required): DashScope API key
-- `PORT` (optional): default `3000`
+| Variable | Required | Notes |
+|---|---|---|
+| `DASHSCOPE_API_KEY` | Optional | Only needed if you don't use BYOK |
+| `PORT` | Optional | Defaults to `3000` |
+
+</details>
+
+---
 
 ## 🎯 Use Cases
 
-- Resume optimization: rewrite bullets, improve clarity, surface strengths
-- Job matching: evaluate fit against a target role and plan next actions
-- Document summarization: turn long notes into an outline + key points
+- 📋 **Resume optimization** — rewrite bullets, improve clarity, surface strengths
+- 🎯 **Job matching** — evaluate fit against a target role and plan next actions
+- 📚 **Document summarization** — turn long notes into outline + key points
+
+---
+
+## 🛠 Tech Stack
+
+| Layer | Tech |
+|---|---|
+| Backend | **Node.js + Express** |
+| Frontend | Vanilla **HTML / CSS / JS** (no framework) |
+| AI | **DashScope / Qwen** (OpenAI-compatible Chat API) |
+| PDF | `pdf-parse` |
+| Deployment | Railway |
+
+> Language mix: JavaScript 68% · CSS 19% · HTML 13%
+
+---
+
+## 📦 Project Structure
+
+```
+docdigest/
+├── server.js              # upload, summarize, chat endpoints
+├── public/
+│   ├── index.html         # UI
+│   ├── style.css          # styling
+│   └── main.js            # client logic (history / chat / export)
+├── .env.example
+└── README.md
+```
+
+---
+
+## 📌 Design Philosophy
+
+**Free parsing first, AI optional** — make document understanding accessible without cost.
+**Local-first** — no document storage server-side; users own their data.
+
+---
+
+## 🌐 Deployment (Railway)
+
+- Set **Root Directory** to `docdigest/`
+- `PORT` is handled by Railway automatically
+- `DASHSCOPE_API_KEY` is **not required** in production (BYOK by default)
+
+---
 
 ## 🗺 Roadmap
 
-- Deployment: Docker / one-click run
-- Chat with document: better multi-turn memory per document
-- More file types (e.g., docx) and improved extraction quality
-- Multi-model support (configurable provider/model)
-- Streaming responses for long outputs
+- [ ] Docker / one-click run
+- [ ] Better multi-turn chat memory per document
+- [ ] `.docx` support and improved extraction quality
+- [ ] Multi-model support (configurable provider / model)
+- [ ] Streaming responses for long outputs
+
+---
 
 ## 📄 License
 
-MIT — see [`LICENSE`](LICENSE).
+[MIT](./LICENSE) © 2026 theAtlantic-zza
 
+<div align="center">
+
+---
+
+**DocDigest** — From raw documents to hiring-ready insights.
+
+If this project is useful, consider giving it a ⭐
+
+</div>
